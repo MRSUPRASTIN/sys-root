@@ -12,10 +12,10 @@
             --sidebar-bg: #11151f;
             --text-primary: #f1f5f9;
             --text-muted: #64748b;
-            --accent: #6366f1; /* Неоновый Индиго */
+            --accent: #6366f1;
             --accent-gradient: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
             --code-bg: #07090e;
-            --code-text: #34d399; /* Хакерский зеленый для результатов */
+            --code-text: #34d399;
             --error-red: #f87171;
         }
 
@@ -27,11 +27,10 @@
 
         body {
             background-color: var(--bg-main);
-            /* Мягкая неоновая подсветка на фоне */
             background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
                               radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.12) 0px, transparent 50%);
             color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 14px;
             display: flex;
             justify-content: center;
@@ -53,7 +52,6 @@
             overflow: hidden;
         }
 
-        /* Боковая панель (Сайдбар) */
         .sidebar {
             width: 280px;
             background: var(--sidebar-bg);
@@ -162,7 +160,6 @@
             animation: pulse 2s infinite;
         }
 
-        /* Главная Рабочая Область */
         .workspace {
             flex-grow: 1;
             display: flex;
@@ -187,7 +184,6 @@
             border-radius: 10px;
         }
 
-        /* Стилизация Выводимых Карточек */
         .card {
             padding: 20px;
             border-radius: 16px;
@@ -232,7 +228,6 @@
             color: var(--error-red);
         }
 
-        /* Нижняя Строка Ввода */
         .input-bar {
             padding: 24px 40px;
             background: rgba(11, 13, 17, 0.8);
@@ -276,7 +271,6 @@
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
         }
 
-        /* Анимированное Модальное Окно Обращения */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -349,7 +343,6 @@
             margin-bottom: 12px;
         }
 
-        /* Индикатор аудио-волны */
         .audio-wave {
             display: flex;
             align-items: center;
@@ -381,7 +374,6 @@
             100% { height: 100%; }
         }
 
-        /* Интерактивная кнопка закрытия */
         .modal-btn {
             width: 100%;
             padding: 12px;
@@ -406,7 +398,6 @@
             filter: brightness(1.1);
         }
 
-        /* Общие Анимации */
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
             70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
@@ -447,7 +438,7 @@
     <main class="workspace">
         <div class="output-screen" id="screen">
             <div class="sys-log">[SYSTEM LOG]: Тёмный нео-модуль запущен успешно.</div>
-            <div class="sys-log">[SYSTEM LOG]: Станция активна. Кликните «Разработчик на связи» внизу слева для трансляции сообщения.</div>
+            <div class="sys-log">[SYSTEM LOG]: Станция активна. Нажмите «Разработчик на связи» внизу слева для прослушивания приветствия.</div>
         </div>
 
         <div class="input-bar">
@@ -489,15 +480,28 @@
     const modalCloseBtn = document.getElementById('modalCloseBtn');
     const devTriggerBtn = document.getElementById('devTriggerBtn');
     let speechUtterance = null;
+    let fallbackTimeout = null;
 
-    // Речевой паттерн для синтеза звука
     const speechText = "Привет от разработчика. На связи создатель этой станции. Лаб стейшн — мой личный побочный проект, который я развиваю и поддерживаю исключительно в свободное время. Это полностью бесплатный инструмент с открытым исходным кодом. Он работает на сто процентов автономно прямо на вашем компьютере — без скрытых подписок, учетных записей и облачных серверов. Если этот софт сэкономил вам время, помог в работе или просто поднял настроение — чашка кофе очень поможет мне продолжать выпускать обновления, оптимизировать крипто-движки и добавлять новые модули. Каждая мелочь важна!";
 
-    // Фокусировка на поле ввода при клике на рабочую область
     document.querySelector('.workspace').addEventListener('click', () => termInput.focus());
-
-    // Открытие говорящего окна автора
     devTriggerBtn.addEventListener('click', openDevModal);
+
+    // Авто-вызов при первом клике (защита от ограничений браузеров на звук)
+    document.addEventListener('click', function autoFirstTrigger() {
+        if (!modalOverlay.classList.contains('active')) {
+            openDevModal();
+        }
+        document.removeEventListener('click', autoFirstTrigger);
+    }, { capture: true, once: true });
+
+    function unlockModalReady(statusText = "Принять и закрыть") {
+        clearTimeout(fallbackTimeout);
+        modalOverlay.classList.remove('speaking');
+        modalCloseBtn.classList.add('ready');
+        modalCloseBtn.disabled = false;
+        modalCloseBtn.innerText = statusText;
+    }
 
     function openDevModal() {
         if (modalOverlay.classList.contains('active')) return;
@@ -509,40 +513,58 @@
         modalCloseBtn.disabled = true;
         modalCloseBtn.innerText = "Дождитесь окончания трансляции...";
 
-        // Подготовка SpeechSynthesis
-        window.speechSynthesis.cancel(); 
-        speechUtterance = new SpeechSynthesisUtterance(speechText);
-        speechUtterance.lang = 'ru-RU';
-        speechUtterance.rate = 1.0; 
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); 
+            speechUtterance = new SpeechSynthesisUtterance(speechText);
+            speechUtterance.lang = 'ru-RU';
+            speechUtterance.rate = 1.0; 
 
-        // Когда речь успешно дочитана
-        speechUtterance.onend = function() {
-            modalOverlay.classList.remove('speaking');
-            modalCloseBtn.classList.add('ready');
-            modalCloseBtn.disabled = false;
-            modalCloseBtn.innerText = "Принять и закрыть";
-        };
+            speechUtterance.onend = function() {
+                unlockModalReady();
+            };
 
-        // Обработка блокировок или ошибок аудио на устройстве
-        speechUtterance.onerror = function() {
-            modalOverlay.classList.remove('speaking');
-            modalCloseBtn.classList.add('ready');
-            modalCloseBtn.disabled = false;
-            modalCloseBtn.innerText = "Закрыть (Аудио недоступно)";
-        };
+            speechUtterance.onerror = function() {
+                runTextFallback("Закрыть (Аудио заблокировано системой)");
+            };
 
-        window.speechSynthesis.speak(speechUtterance);
+            window.speechSynthesis.speak(speechUtterance);
+
+            // Резервный таймер на случай зависания аудио-движка в ОС
+            fallbackTimeout = setTimeout(() => {
+                if (modalCloseBtn.disabled && !window.speechSynthesis.speaking) {
+                    runTextFallback("Закрыть (Таймаут звука)");
+                }
+            }, 2000);
+
+        } else {
+            runTextFallback();
+        }
     }
 
-    // Закрытие окна
-    modalCloseBtn.addEventListener('click', () => {
+    function runTextFallback(btnLabel = "Ознакомлен и закрыть") {
+        window.speechSynthesis.cancel();
+        let timeLeft = 12; 
+        modalCloseBtn.innerText = `Чтение сообщения... (${timeLeft}с)`;
+
+        const countdown = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                unlockModalReady(btnLabel);
+            } else {
+                modalCloseBtn.innerText = `Чтение сообщения... (${timeLeft}с)`;
+            }
+        }, 1000);
+    }
+
+    modalCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (!modalCloseBtn.disabled) {
             modalOverlay.classList.remove('active');
-            window.speechSynthesis.cancel();
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         }
     });
 
-    // Функция быстрого вызова из бокового меню
     function quickCmd(cmdText) {
         termInput.value = cmdText;
         termInput.focus();
@@ -552,13 +574,10 @@
         }
     }
 
-    // Парсер ввода в консоль
     termInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const rawInput = this.value.trim();
-            if (rawInput) {
-                executeCommand(rawInput);
-            }
+            if (rawInput) executeCommand(rawInput);
             this.value = '';
         }
     });
@@ -566,22 +585,16 @@
     function createCard(title, content, isError = false) {
         const card = document.createElement('div');
         card.className = isError ? 'card error-card' : 'card';
-        
         const header = document.createElement('div');
         header.className = 'card-header';
         header.innerHTML = `<span>${title}</span><span>${new Date().toLocaleTimeString()}</span>`;
-        
         const body = document.createElement('div');
         body.className = 'card-body';
         body.innerHTML = content;
-        
-        card.appendChild(header);
-        card.appendChild(body);
-        screen.appendChild(card);
-        screen.scrollTop = screen.scrollHeight;
+        card.appendChild(header); card.appendChild(body);
+        screen.appendChild(card); screen.scrollTop = screen.scrollHeight;
     }
 
-    // Движок обработки терминальных команд
     function executeCommand(inputStr) {
         const parts = inputStr.split(' ');
         const cmd = parts[0].toLowerCase();
@@ -589,97 +602,45 @@
 
         switch(cmd) {
             case 'help':
-                let helpText = `Доступные директивы платформы:\n`;
-                helpText += `• genpass [длина] - Безопасный генератор байт-паролей\n`;
-                helpText += `• cipher [текст]   - Строковое шифрование в Base64\n`;
-                helpText += `• decipher [хэш]  - Восстановление текста из Base64\n`;
-                helpText += `• hash [текст]     - Асинхронное крипто-хэширование SHA-256\n`;
-                helpText += `• portscan         - Сканирование локальных сокетов машины\n`;
-                helpText += `• sysinfo          - Чтение метаданных гостевой сессии\n`;
-                helpText += `• clear            - Сброс буфера рабочей среды`;
-                createCard('Справка системы', helpText);
+                createCard('Справка системы', `Доступные директивы платформы:\n• genpass [длина] - Безопасный генератор байт-паролей\n• cipher [текст]   - Строковое шифрование в Base64\n• decipher [хэш]  - Восстановление текста из Base64\n• hash [текст]     - Асинхронное крипто-хэширование SHA-256\n• portscan         - Сканирование локальных сокетов машины\n• sysinfo          - Чтение метаданных гостевой сессии\n• clear            - Сброс буфера рабочей среды`);
                 break;
-
             case 'genpass':
                 let length = parseInt(args[0]) || 16;
-                if (length < 4 || length > 64) {
-                    createCard('Ошибка параметров', 'Допустимый диапазон длины генератора: от 4 до 64 символов.', true);
-                    break;
-                }
+                if (length < 4 || length > 64) { createCard('Ошибка параметров', 'Диапазон: от 4 до 64 символов.', true); break; }
                 createCard('Генератор крипто-паролей', generateSecurePassword(length));
                 break;
-
             case 'cipher':
-                if (args.length === 0) {
-                    createCard('Ошибка ввода', 'Передайте текст для конвертации. Пример: cipher мой_текст', true);
-                    break;
-                }
-                try {
-                    const encoded = btoa(encodeURIComponent(args.join(' ')).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
-                    createCard('Кодирование Base64', encoded);
-                } catch(e) {
-                    createCard('Критическая ошибка', 'Не удалось нормализовать входящие символы.', true);
-                }
+                if (args.length === 0) { createCard('Ошибка ввода', 'Передайте текст.', true); break; }
+                try { createCard('Кодирование Base64', btoa(encodeURIComponent(args.join(' ')).replace(/%([0-9A-F]{2})/g, (m, p) => String.fromCharCode('0x' + p)))); } catch(e) { createCard('Критическая ошибка', 'Ошибка конвертации.', true); }
                 break;
-
             case 'decipher':
-                if (args.length === 0) {
-                    createCard('Ошибка ввода', 'Укажите строку в формате Base64 для расшифровки.', true);
-                    break;
-                }
-                try {
-                    const decoded = decodeURIComponent(atob(args[0]).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                    createCard('Декодирование Base64', decoded);
-                } catch(e) {
-                    createCard('Ошибка декодера', 'Строка не соответствует спецификации Base64.', true);
-                }
+                if (args.length === 0) { createCard('Ошибка ввода', 'Укажите строку Base64.', true); break; }
+                try { createCard('Декодирование Base64', decodeURIComponent(atob(args[0]).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))); } catch(e) { createCard('Ошибка декодера', 'Невалидный формат.', true); }
                 break;
-
             case 'hash':
-                if (args.length === 0) {
-                    createCard('Ошибка ввода', 'Отсутствует текст для обработки алгоритмом SHA-256.', true);
-                    break;
-                }
+                if (args.length === 0) { createCard('Ошибка ввода', 'Нет текста.', true); break; }
                 const encoder = new TextEncoder();
                 crypto.subtle.digest('SHA-256', encoder.encode(args.join(' ')))
                     .then(buffer => {
                         const hashHex = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
                         createCard('Криптографический хэш SHA-256', hashHex);
-                    }).catch(() => createCard('Системный сбой', 'Локальный крипто-движок отклонил транзакцию.', true));
+                    }).catch(() => createCard('Системный сбой', 'Ошибка крипто-движка.', true));
                 break;
-
             case 'portscan':
-                createCard('Сетевой анализ', 'Запущен опрос локальных сокетов на хосте 127.0.0.1...');
+                createCard('Сетевой анализ', 'Запущен опрос портов 127.0.0.1...');
                 [80, 443, 3000, 8080].forEach(port => {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 1500);
                     fetch(`https://127.0.0.1:${port}`, { mode: 'no-cors', signal: controller.signal })
-                        .then(() => {
-                            clearTimeout(timeoutId);
-                            const log = document.createElement('div'); log.className = 'sys-log';
-                            log.innerHTML = `[+] Локальный порт ${port}: <b style="color: #34d399">ОТКРЫТ (Службы активны)</b>`;
-                            screen.appendChild(log);
-                        })
-                        .catch((err) => {
-                            clearTimeout(timeoutId);
-                            const log = document.createElement('div'); log.className = 'sys-log';
-                            log.innerHTML = err.name !== 'AbortError' ? `[+] Локальный порт ${port}: <b style="color: #34d399">АКТИВЕН</b>` : `[-] Локальный порт ${port}: <span style="color: #64748b">ЗАКРЫТ</span>`;
-                            screen.appendChild(log); screen.scrollTop = screen.scrollHeight;
-                        });
+                        .then(() => { clearTimeout(timeoutId); const log = document.createElement('div'); log.className = 'sys-log'; log.innerHTML = `[+] Порт ${port}: <b style="color: #34d399">ОТКРЫТ</b>`; screen.appendChild(log); })
+                        .catch((err) => { clearTimeout(timeoutId); const log = document.createElement('div'); log.className = 'sys-log'; log.innerHTML = err.name !== 'AbortError' ? `[+] Порт ${port}: <b style="color: #34d399">АКТИВЕН</b>` : `[-] Порт ${port}: <span style="color: #64748b">ЗАКРЫТ</span>`; screen.appendChild(log); screen.scrollTop = screen.scrollHeight; });
                 });
                 break;
-
             case 'sysinfo':
-                createCard('Метаданные системы', `Платформа среды:   ${navigator.platform}\nЯзыковой пакет:    ${navigator.language}\nРазрешение экрана: ${window.screen.width}x${window.screen.height} px\nПотоки процессора: ${navigator.hardwareConcurrency || 'Защищено'} ядер`);
+                createCard('Метаданные системы', `Платформа: ${navigator.platform}\nЯзык: ${navigator.language}\nЭкран: ${window.screen.width}x${window.screen.height}\nЯдра CPU: ${navigator.hardwareConcurrency || 'Защищено'}`);
                 break;
-
-            case 'clear':
-            case 'cls':
-                screen.innerHTML = '<div class="sys-log">[SYSTEM LOG]: Буфер экрана сброшен.</div>';
-                break;
-
-            default:
-                createCard('Ошибка синтаксиса', `Команда "${cmd}" не распознана. Используйте меню слева или введите "help".`, true);
+            case 'clear': screen.innerHTML = '<div class="sys-log">[SYSTEM LOG]: Буфер экрана сброшен.</div>'; break;
+            default: createCard('Ошибка синтаксиса', `Команда "${cmd}" не распознана.`, true);
         }
     }
 
