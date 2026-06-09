@@ -145,8 +145,8 @@
 
     <div class="output-area" id="screen">
         <div class="row meta">[SYSTEM]: INITIALIZING KERNEL LOGS...</div>
-        <div class="row meta">[SYSTEM]: ALL LOCAL MODULES LOADED SUCCESSFULLY.</div>
-        <div class="row">Интерфейс автономного управления запущен. Внешние зависимости отключены.</div>
+        <div class="row meta">[SYSTEM]: ALL CRYPTO MODULES LOADED SUCESSFULLY.</div>
+        <div class="row">Интерфейс управления запущен. Станция готова к обработке пакетов.</div>
         <div class="row meta">Введите <span class="accent">help</span> для вывода полного списка доступных утилит.</div>
     </div>
 
@@ -188,12 +188,12 @@
 
         switch(cmd) {
             case 'help':
-                print('Доступные криптографические и автономные модули:', 'meta');
+                print('Доступные криптографические и системные модули:', 'meta');
                 print('  <span class="accent">genpass [length]</span>  - Generator: Создание устойчивых паролей');
                 print('  <span class="accent">cipher [text]</span>     - Cipher: Кодирование строки в Base64');
                 print('  <span class="accent">decipher [hash]</span>   - Decipher: Декодирование из Base64');
                 print('  <span class="accent">hash [text]</span>       - Cryptography: Хэширование SHA-256');
-                print('  <span class="accent">portscan</span>          - Network: Локальное сканирование портов машины (100% Offline)');
+                print('  <span class="accent">ip [target_ip]</span>    - OSINT: Гео-разведка по IP через ipwho.is (HTTPS)');
                 print('  <span class="accent">sysinfo</span>           - Сбор слепков метаданных текущего гостя');
                 print('  <span class="accent">clear</span>             - Полная очистка буфера экрана');
                 break;
@@ -261,32 +261,34 @@
                     .catch(() => print('Критическая ошибка крипто-движка.', 'error'));
                 break;
 
-            case 'portscan':
-                print('Инициализация сканера... Анализ локального хоста 127.0.0.1', 'meta');
-                print('Проверка популярных портов разработки (80, 443, 3000, 8080)...', 'meta');
+            case 'ip':
+                const targetIp = args[0] || '';
+                print(`Отправка диагностических пакетов к узлу: ${targetIp || 'LOCAL_HOST'}...`, 'meta');
                 
-                const portsToScan = [80, 443, 3000, 8080];
-                
-                portsToScan.forEach(port => {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 1500); // Таймаут 1.5 секунды
-                    
-                    fetch(`https://127.0.0.1:${port}`, { mode: 'no-cors', signal: controller.signal })
-                        .then(() => {
-                            clearTimeout(timeoutId);
-                            print(`  [+] Порт ${port}: <span class="code">ОТКРЫТ / СЛУШАЕТСЯ</span>`);
-                        })
-                        .catch((err) => {
-                            clearTimeout(timeoutId);
-                            // Браузеры отклоняют no-cors по-разному, но если это не таймаут, значит порт отвечает
-                            if (err.name !== 'AbortError') {
-                                print(`  [+] Порт ${port}: <span class="code">АКТИВЕН (Сервер обнаружен)</span>`);
-                            } else {
-                                print(`  [-] Порт ${port}: <span class="meta">ЗАКРЫТ (Превышено время ожидания)</span>`);
-                            }
-                            screen.scrollTop = screen.scrollHeight;
-                        });
-                });
+                // Ссылка идет СТРОГО на ipwho.is
+                fetch(`https://ipwho.is/${targetIp}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error('API_ERROR');
+                        return res.json();
+                    })
+                    .then(data => {
+                        if(data.success === false) {
+                            print(`Ошибка: Узел отклонил запрос. Причина: ${data.message || 'invalid IP'}`, 'error');
+                            return;
+                        }
+                        print('ОТВЕТ ОТ МАРШРУТИЗАТОРА ПОЛУЧЕН:', 'meta');
+                        let info = `Target IP:  ${data.ip}\n`;
+                        info += `Type:       ${data.type} (IPv${data.ip_version || '4'})\n`;
+                        info += `Provider:   ${data.connection?.isp || 'Unknown'} (${data.connection?.asn || 'N/A'})\n`;
+                        info += `Location:   ${data.country} / ${data.region} / ${data.city}\n`;
+                        info += `Geoposition: Lat ${data.latitude}, Lon ${data.longitude}`;
+                        print(`<div class="tool-result code" style="white-space: pre-line;">${info}</div>`);
+                        screen.scrollTop = screen.scrollHeight;
+                    })
+                    .catch(() => {
+                        print('Ошибка связи: Не удалось получить ответ от инфо-сервера ipwho.is.', 'error');
+                        print('Проверь: Блокировщики скриптов или AdBlock могут резать внешние fetch-запросы.', 'meta');
+                    });
                 break;
 
             case 'sysinfo':
