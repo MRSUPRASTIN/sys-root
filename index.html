@@ -276,7 +276,7 @@
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
         }
 
-        /* Модальное Окно Обращения Разработчика */
+        /* Анимированное Модальное Окно Обращения */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -349,7 +349,7 @@
             margin-bottom: 12px;
         }
 
-        /* Аудио-волна пульсации во время чтения */
+        /* Индикатор аудио-волны */
         .audio-wave {
             display: flex;
             align-items: center;
@@ -381,6 +381,7 @@
             100% { height: 100%; }
         }
 
+        /* Интерактивная кнопка закрытия */
         .modal-btn {
             width: 100%;
             padding: 12px;
@@ -446,7 +447,7 @@
     <main class="workspace">
         <div class="output-screen" id="screen">
             <div class="sys-log">[SYSTEM LOG]: Тёмный нео-модуль запущен успешно.</div>
-            <div class="sys-log">[SYSTEM LOG]: Станция активна. Нажмите «Разработчик на связи» внизу слева для прослушивания приветствия.</div>
+            <div class="sys-log">[SYSTEM LOG]: Станция активна. Кликните «Разработчик на связи» внизу слева для трансляции сообщения.</div>
         </div>
 
         <div class="input-bar">
@@ -489,12 +490,13 @@
     const devTriggerBtn = document.getElementById('devTriggerBtn');
     let speechUtterance = null;
 
-    // Текст для голосового движка браузера
+    // Речевой паттерн для синтеза звука
     const speechText = "Привет от разработчика. На связи создатель этой станции. Лаб стейшн — мой личный побочный проект, который я развиваю и поддерживаю исключительно в свободное время. Это полностью бесплатный инструмент с открытым исходным кодом. Он работает на сто процентов автономно прямо на вашем компьютере — без скрытых подписок, учетных записей и облачных серверов. Если этот софт сэкономил вам время, помог в работе или просто поднял настроение — чашка кофе очень поможет мне продолжать выпускать обновления, оптимизировать крипто-движки и добавлять новые модули. Каждая мелочь важна!";
 
+    // Фокусировка на поле ввода при клике на рабочую область
     document.querySelector('.workspace').addEventListener('click', () => termInput.focus());
 
-    // Перехват клика по кнопке в футере сайдбара
+    // Открытие говорящего окна автора
     devTriggerBtn.addEventListener('click', openDevModal);
 
     function openDevModal() {
@@ -507,11 +509,13 @@
         modalCloseBtn.disabled = true;
         modalCloseBtn.innerText = "Дождитесь окончания трансляции...";
 
+        // Подготовка SpeechSynthesis
         window.speechSynthesis.cancel(); 
         speechUtterance = new SpeechSynthesisUtterance(speechText);
         speechUtterance.lang = 'ru-RU';
         speechUtterance.rate = 1.0; 
 
+        // Когда речь успешно дочитана
         speechUtterance.onend = function() {
             modalOverlay.classList.remove('speaking');
             modalCloseBtn.classList.add('ready');
@@ -519,6 +523,7 @@
             modalCloseBtn.innerText = "Принять и закрыть";
         };
 
+        // Обработка блокировок или ошибок аудио на устройстве
         speechUtterance.onerror = function() {
             modalOverlay.classList.remove('speaking');
             modalCloseBtn.classList.add('ready');
@@ -529,6 +534,7 @@
         window.speechSynthesis.speak(speechUtterance);
     }
 
+    // Закрытие окна
     modalCloseBtn.addEventListener('click', () => {
         if (!modalCloseBtn.disabled) {
             modalOverlay.classList.remove('active');
@@ -536,15 +542,17 @@
         }
     });
 
+    // Функция быстрого вызова из бокового меню
     function quickCmd(cmdText) {
         termInput.value = cmdText;
         termInput.focus();
-        if(cmdText === 'genpass' || cmdText === 'portscan' || cmdText === 'sysinfo' || cmdText === 'clear') {
+        if(['genpass', 'portscan', 'sysinfo', 'clear'].includes(cmdText.trim())) {
             executeCommand(cmdText);
             termInput.value = '';
         }
     }
 
+    // Парсер ввода в консоль
     termInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const rawInput = this.value.trim();
@@ -573,6 +581,7 @@
         screen.scrollTop = screen.scrollHeight;
     }
 
+    // Движок обработки терминальных команд
     function executeCommand(inputStr) {
         const parts = inputStr.split(' ');
         const cmd = parts[0].toLowerCase();
@@ -597,8 +606,7 @@
                     createCard('Ошибка параметров', 'Допустимый диапазон длины генератора: от 4 до 64 символов.', true);
                     break;
                 }
-                const password = generateSecurePassword(length);
-                createCard('Генератор крипто-паролей', password);
+                createCard('Генератор крипто-паролей', generateSecurePassword(length));
                 break;
 
             case 'cipher':
@@ -606,9 +614,8 @@
                     createCard('Ошибка ввода', 'Передайте текст для конвертации. Пример: cipher мой_текст', true);
                     break;
                 }
-                const textToEncode = args.join(' ');
                 try {
-                    const encoded = btoa(encodeURIComponent(textToEncode).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+                    const encoded = btoa(encodeURIComponent(args.join(' ')).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
                     createCard('Кодирование Base64', encoded);
                 } catch(e) {
                     createCard('Критическая ошибка', 'Не удалось нормализовать входящие символы.', true);
@@ -620,9 +627,8 @@
                     createCard('Ошибка ввода', 'Укажите строку в формате Base64 для расшифровки.', true);
                     break;
                 }
-                const hashToDecode = args[0];
                 try {
-                    const decoded = decodeURIComponent(atob(hashToDecode).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                    const decoded = decodeURIComponent(atob(args[0]).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
                     createCard('Декодирование Base64', decoded);
                 } catch(e) {
                     createCard('Ошибка декодера', 'Строка не соответствует спецификации Base64.', true);
@@ -634,58 +640,37 @@
                     createCard('Ошибка ввода', 'Отсутствует текст для обработки алгоритмом SHA-256.', true);
                     break;
                 }
-                const textToHash = args.join(' ');
-                
                 const encoder = new TextEncoder();
-                const data = encoder.encode(textToHash);
-                
-                crypto.subtle.digest('SHA-256', data)
+                crypto.subtle.digest('SHA-256', encoder.encode(args.join(' ')))
                     .then(buffer => {
-                        const hashArray = Array.from(new Uint8Array(buffer));
-                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        const hashHex = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
                         createCard('Криптографический хэш SHA-256', hashHex);
-                    })
-                    .catch(() => createCard('Системный сбой', 'Локальный крипто-движок отклонил транзакцию.', true));
+                    }).catch(() => createCard('Системный сбой', 'Локальный крипто-движок отклонил транзакцию.', true));
                 break;
 
             case 'portscan':
-                createCard('Сетевой анализ', 'Запущен опрос локальных сокетов на хосте 127.0.0.1...\nЛоги будут выведены ниже.');
-                
-                const portsToScan = [80, 443, 3000, 8080];
-                portsToScan.forEach(port => {
+                createCard('Сетевой анализ', 'Запущен опрос локальных сокетов на хосте 127.0.0.1...');
+                [80, 443, 3000, 8080].forEach(port => {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 1500);
-                    
                     fetch(`https://127.0.0.1:${port}`, { mode: 'no-cors', signal: controller.signal })
                         .then(() => {
                             clearTimeout(timeoutId);
-                            const log = document.createElement('div');
-                            log.className = 'sys-log';
+                            const log = document.createElement('div'); log.className = 'sys-log';
                             log.innerHTML = `[+] Локальный порт ${port}: <b style="color: #34d399">ОТКРЫТ (Службы активны)</b>`;
                             screen.appendChild(log);
                         })
                         .catch((err) => {
                             clearTimeout(timeoutId);
-                            const log = document.createElement('div');
-                            log.className = 'sys-log';
-                            if (err.name !== 'AbortError') {
-                                log.innerHTML = `[+] Локальный порт ${port}: <b style="color: #34d399">АКТИВЕН (Сервер отвечает)</b>`;
-                            } else {
-                                log.innerHTML = `[-] Локальный порт ${port}: <span style="color: #64748b">ЗАКРЫТ (Таймаут)</span>`;
-                            }
-                            screen.appendChild(log);
-                            screen.scrollTop = screen.scrollHeight;
+                            const log = document.createElement('div'); log.className = 'sys-log';
+                            log.innerHTML = err.name !== 'AbortError' ? `[+] Локальный порт ${port}: <b style="color: #34d399">АКТИВЕН</b>` : `[-] Локальный порт ${port}: <span style="color: #64748b">ЗАКРЫТ</span>`;
+                            screen.appendChild(log); screen.scrollTop = screen.scrollHeight;
                         });
                 });
                 break;
 
             case 'sysinfo':
-                let sysData = `Платформа среды:   ${navigator.platform}\n`;
-                sysData += `Языковой пакет:    ${navigator.language}\n`;
-                sysData += `Разрешение экрана: ${window.screen.width}x${window.screen.height} px\n`;
-                sysData += `Потоки процессора: ${navigator.hardwareConcurrency || 'Защищено'} ядер\n`;
-                sysData += `Куки-файлы:        ${navigator.cookieEnabled ? 'Разрешены' : 'Заблокированы'}`;
-                createCard('Метаданные системы', sysData);
+                createCard('Метаданные системы', `Платформа среды:   ${navigator.platform}\nЯзыковой пакет:    ${navigator.language}\nРазрешение экрана: ${window.screen.width}x${window.screen.height} px\nПотоки процессора: ${navigator.hardwareConcurrency || 'Защищено'} ядер`);
                 break;
 
             case 'clear':
@@ -699,13 +684,9 @@
     }
 
     function generateSecurePassword(len) {
-        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
-        let res = "";
-        const randomValues = new Uint32Array(len);
-        window.crypto.getRandomValues(randomValues);
-        for (let i = 0; i < len; i++) {
-            res += charset[randomValues[i] % charset.length];
-        }
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=";
+        let res = ""; const randomValues = new Uint32Array(len); window.crypto.getRandomValues(randomValues);
+        for (let i = 0; i < len; i++) res += charset[randomValues[i] % charset.length];
         return res;
     }
 </script>
