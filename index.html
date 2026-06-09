@@ -142,6 +142,15 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .sidebar-footer:hover {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-primary);
         }
 
         .status-pulse {
@@ -267,7 +276,136 @@
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
         }
 
-        /* Анимации */
+        /* Модальное Окно Обращения Разработчика */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 7, 10, 0.85);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-window {
+            width: 100%;
+            max-width: 550px;
+            background: #11151f;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.15);
+            transform: scale(0.9);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-overlay.active .modal-window {
+            transform: scale(1);
+        }
+
+        .modal-window::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #6366f1, #06b6d4);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .modal-text {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .modal-text p {
+            margin-bottom: 12px;
+        }
+
+        /* Аудио-волна пульсации во время чтения */
+        .audio-wave {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 20px;
+            height: 20px;
+        }
+
+        .wave-bar {
+            width: 3px;
+            height: 100%;
+            background: #06b6d4;
+            border-radius: 2px;
+            animation: wave-pulse 1s ease-in-out infinite alternate;
+            animation-play-state: paused;
+        }
+
+        .modal-overlay.speaking .wave-bar {
+            animation-play-state: running;
+        }
+
+        .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.3s; }
+
+        @keyframes wave-pulse {
+            0% { height: 20%; }
+            100% { height: 100%; }
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.02);
+            color: #475569;
+            font-weight: 600;
+            cursor: not-allowed;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.ready {
+            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+            color: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .modal-btn.ready:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+
+        /* Общие Анимации */
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
             70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
@@ -299,16 +437,16 @@
             </ul>
         </div>
 
-        <div class="sidebar-footer">
+        <div class="sidebar-footer" id="devTriggerBtn" title="Послушать обращение разработчика">
             <div class="status-pulse"></div>
-            <span>Связь стабильна (Offline)</span>
+            <span>Разработчик на связи</span>
         </div>
     </aside>
 
     <main class="workspace">
         <div class="output-screen" id="screen">
             <div class="sys-log">[SYSTEM LOG]: Тёмный нео-модуль запущен успешно.</div>
-            <div class="sys-log">[SYSTEM LOG]: Станция активна. Используй меню навигации или ручной ввод.</div>
+            <div class="sys-log">[SYSTEM LOG]: Станция активна. Нажмите «Разработчик на связи» внизу слева для прослушивания приветствия.</div>
         </div>
 
         <div class="input-bar">
@@ -320,11 +458,83 @@
     </main>
 </div>
 
+<div class="modal-overlay" id="devModal">
+    <div class="modal-window">
+        <div class="modal-title">Привет от разработчика ⚡</div>
+        
+        <div class="audio-wave">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <span style="font-size: 11px; color: #06b6d4; font-family: monospace; margin-left: 8px;">AUDIO_STREAM_ACTIVE</span>
+        </div>
+
+        <div class="modal-text">
+            <p><strong>На связи создатель этой станции.</strong> LAB_STATION — мой личный побочный проект, который я развиваю и поддерживаю исключительно в свободное время.</p>
+            <p>Это полностью бесплатный инструмент с открытым исходным кодом. Он работает на 100% автономно прямо на вашем компьютере — без скрытых подписок, учетных записей и облачных серверов.</p>
+            <p>Если этот софт сэкономил вам время, помог в работе или просто поднял настроение — чашка кофе очень поможет мне продолжать выпускать обновления, оптимизировать крипто-движки и добавлять новые модули. Каждая мелочь важна!</p>
+        </div>
+
+        <button class="modal-btn" id="modalCloseBtn" disabled>Входящая трансляция текста...</button>
+    </div>
+</div>
+
 <script>
     const screen = document.getElementById('screen');
     const termInput = document.getElementById('terminal-input');
+    const modalOverlay = document.getElementById('devModal');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const devTriggerBtn = document.getElementById('devTriggerBtn');
+    let speechUtterance = null;
+
+    // Текст для голосового движка браузера
+    const speechText = "Привет от разработчика. На связи создатель этой станции. Лаб стейшн — мой личный побочный проект, который я развиваю и поддерживаю исключительно в свободное время. Это полностью бесплатный инструмент с открытым исходным кодом. Он работает на сто процентов автономно прямо на вашем компьютере — без скрытых подписок, учетных записей и облачных серверов. Если этот софт сэкономил вам время, помог в работе или просто поднял настроение — чашка кофе очень поможет мне продолжать выпускать обновления, оптимизировать крипто-движки и добавлять новые модули. Каждая мелочь важна!";
 
     document.querySelector('.workspace').addEventListener('click', () => termInput.focus());
+
+    // Перехват клика по кнопке в футере сайдбара
+    devTriggerBtn.addEventListener('click', openDevModal);
+
+    function openDevModal() {
+        if (modalOverlay.classList.contains('active')) return;
+
+        modalOverlay.classList.add('active');
+        modalOverlay.classList.add('speaking');
+        
+        modalCloseBtn.classList.remove('ready');
+        modalCloseBtn.disabled = true;
+        modalCloseBtn.innerText = "Дождитесь окончания трансляции...";
+
+        window.speechSynthesis.cancel(); 
+        speechUtterance = new SpeechSynthesisUtterance(speechText);
+        speechUtterance.lang = 'ru-RU';
+        speechUtterance.rate = 1.0; 
+
+        speechUtterance.onend = function() {
+            modalOverlay.classList.remove('speaking');
+            modalCloseBtn.classList.add('ready');
+            modalCloseBtn.disabled = false;
+            modalCloseBtn.innerText = "Принять и закрыть";
+        };
+
+        speechUtterance.onerror = function() {
+            modalOverlay.classList.remove('speaking');
+            modalCloseBtn.classList.add('ready');
+            modalCloseBtn.disabled = false;
+            modalCloseBtn.innerText = "Закрыть (Аудио недоступно)";
+        };
+
+        window.speechSynthesis.speak(speechUtterance);
+    }
+
+    modalCloseBtn.addEventListener('click', () => {
+        if (!modalCloseBtn.disabled) {
+            modalOverlay.classList.remove('active');
+            window.speechSynthesis.cancel();
+        }
+    });
 
     function quickCmd(cmdText) {
         termInput.value = cmdText;
