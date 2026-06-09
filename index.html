@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAB_STATION // CONTROL_PANEL</title>
+    <title>LAB_STATION // NEXT_GEN_INTERFACE</title>
     <style>
         :root {
-            --bg-main: #0a0b0d;
-            --panel-bg: #111317;
-            --panel-border: #222630;
-            --text-primary: #e2e8f0;
-            --text-muted: #64748b;
-            --accent-blue: #38bdf8; 
-            --code-green: #34d399;
+            --bg-main: #f3f4f6;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --panel-border: rgba(229, 231, 235, 0.9);
+            --sidebar-bg: #fafafa;
+            --text-primary: #1f2937;
+            --text-muted: #9ca3af;
+            --accent: #4f46e5; /* Индиго/Фиолетовый неон */
+            --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            --code-bg: #f8fafc;
+            --code-text: #0f172a;
             --error-red: #ef4444;
         }
 
@@ -24,228 +27,401 @@
 
         body {
             background-color: var(--bg-main);
+            background-image: radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.08) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.08) 0px, transparent 50%);
             color: var(--text-primary);
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             font-size: 14px;
-            line-height: 1.6;
-            padding: 30px;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            padding: 20px;
         }
 
-        .console-container {
+        .main-container {
             width: 100%;
-            max-width: 1100px;
+            max-width: 1200px;
+            height: 750px;
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.08);
+            display: flex;
+            overflow: hidden;
         }
 
-        .top-bar {
-            background: #161920;
-            padding: 10px 20px;
-            border-bottom: 1px solid var(--panel-border);
+        /* Интерактивный Сайдбар */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--panel-border);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: -0.5px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #06b6d4;
+            border-radius: 50%;
+        }
+
+        .menu-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .module-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .module-btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            color: #4b5563;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
+        .module-btn:hover {
+            background: #ffffff;
+            border-color: var(--panel-border);
+            color: var(--text-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
         }
 
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            background-color: var(--code-green);
+        .module-btn .cmd-tag {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        .sidebar-footer {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-pulse {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
             border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse 2s infinite;
         }
 
-        .station-id {
-            font-size: 12px;
-            color: var(--text-muted);
+        /* Главная Рабочая Область */
+        .workspace {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
         }
 
-        .output-area {
-            padding: 25px;
-            height: 580px;
+        .output-screen {
+            flex-grow: 1;
+            padding: 40px;
             overflow-y: auto;
-            background: #0d0f13;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
-        .output-area::-webkit-scrollbar {
+        .output-screen::-webkit-scrollbar {
             width: 6px;
         }
-        .output-area::-webkit-scrollbar-thumb {
-            background: #222630;
+        .output-screen::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
         }
 
-        .row {
-            margin-bottom: 6px;
+        .card {
+            padding: 20px;
+            border-radius: 16px;
+            background: var(--code-bg);
+            border: 1px solid var(--panel-border);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .card-header {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card-body {
+            color: var(--code-text);
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
             white-space: pre-wrap;
+            word-break: break-all;
         }
 
-        .meta { color: var(--text-muted); }
-        .accent { color: var(--accent-blue); }
-        .code { color: var(--code-green); }
-        .error { color: var(--error-red); }
+        .sys-log {
+            color: var(--text-muted);
+            font-size: 13px;
+            border-left: 2px solid #e5e7eb;
+            padding-left: 12px;
+        }
 
-        .input-row {
+        .error-card {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: var(--error-red);
+        }
+
+        /* Новая Строка Ввода */
+        .input-bar {
+            padding: 24px 40px;
+            background: #ffffff;
+            border-top: 1px solid var(--panel-border);
             display: flex;
             align-items: center;
-            padding: 15px 25px;
-            background: #111317;
-            border-top: 1px solid var(--panel-border);
+            gap: 16px;
         }
 
-        .prompt-symbol {
-            color: var(--accent-blue);
-            margin-right: 12px;
+        .input-wrapper {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--text-muted);
             font-weight: bold;
-            user-select: none;
+            font-family: monospace;
         }
 
         #terminal-input {
-            background: transparent;
-            border: none;
+            width: 100%;
+            padding: 14px 16px 14px 40px;
+            border-radius: 14px;
+            border: 1px solid var(--panel-border);
+            background: #f9fafb;
             color: var(--text-primary);
             font-family: 'Consolas', 'Courier New', monospace;
             font-size: 14px;
-            flex-grow: 1;
             outline: none;
+            transition: all 0.2s ease;
         }
 
-        .tool-result {
-            margin: 10px 0;
-            padding: 12px;
-            background: #161920;
-            border-left: 3px solid var(--accent-blue);
-            font-weight: bold;
+        #terminal-input:focus {
+            background: #ffffff;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        /* Анимации */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-<div class="console-container">
-    <div class="top-bar">
-        <div class="status-indicator">
-            <div class="status-dot"></div>
-            <span>LAB_STATION // ONLINE</span>
+<div class="main-container">
+    <aside class="sidebar">
+        <div>
+            <div class="brand">LAB_STATION v2.0</div>
+            
+            <div class="menu-title">Инструменты</div>
+            <ul class="module-list">
+                <li><button class="module-btn" onclick="quickCmd('genpass')">Пароли <span class="cmd-tag">genpass</span></button></li>
+                <li><button class="module-btn" onclick="quickCmd('cipher ')">Кодировать <span class="cmd-tag">cipher</span></button></li>
+                <li><button class="module-btn" onclick="quickCmd('decipher ')">Декодировать <span class="cmd-tag">decipher</span></button></li>
+                <li><button class="module-btn" onclick="quickCmd('hash ')">SHA-256 хэш <span class="cmd-tag">hash</span></button></li>
+                <li><button class="module-btn" onclick="quickCmd('portscan')">Сканер портов <span class="cmd-tag">portscan</span></button></li>
+                <li><button class="module-btn" onclick="quickCmd('sysinfo')">Слепок системы <span class="cmd-tag">sysinfo</span></button></li>
+                <li><button class="module-btn" onclick="quickCmd('clear')">Очистить экран <span class="cmd-tag">clear</span></button></li>
+            </ul>
         </div>
-        <div class="station-id">HOST: GITHUB_PAGES // SECURE_MODE</div>
-    </div>
 
-    <div class="output-area" id="screen">
-        <div class="row meta">[SYSTEM]: INITIALIZING KERNEL LOGS...</div>
-        <div class="row meta">[SYSTEM]: ALL CRYPTO MODULES LOADED SUCESSFULLY.</div>
-        <div class="row">Интерфейс управления запущен. Станция готова к обработке пакетов.</div>
-        <div class="row meta">Введите <span class="accent">help</span> для вывода полного списка доступных утилит.</div>
-    </div>
+        <div class="sidebar-footer">
+            <div class="status-pulse"></div>
+            <span>Связь стабильна (Offline)</span>
+        </div>
+    </aside>
 
-    <div class="input-row">
-        <span class="prompt-symbol">root@lab_station:#</span>
-        <input type="text" id="terminal-input" autofocus autocomplete="off" spellcheck="false">
-    </div>
+    <main class="workspace">
+        <div class="output-screen" id="screen">
+            <div class="sys-log">[SYSTEM LOG]: Модули ядра инициализированы без ошибок.</div>
+            <div class="sys-log">[SYSTEM LOG]: Готов к работе. Выберите инструмент слева или введите команду вручную.</div>
+        </div>
+
+        <div class="input-bar">
+            <div class="input-wrapper">
+                <span class="input-icon">/</span>
+                <input type="text" id="terminal-input" placeholder="Введите команду или нажмите кнопку слева..." autofocus autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+    </main>
 </div>
 
 <script>
     const screen = document.getElementById('screen');
     const termInput = document.getElementById('terminal-input');
 
-    document.addEventListener('click', () => termInput.focus());
+    // Клик по рабочей области возвращает фокус в поле ввода
+    document.querySelector('.workspace').addEventListener('click', () => termInput.focus());
+
+    // Функция для кнопок в боковой панели
+    function quickCmd(cmdText) {
+        termInput.value = cmdText;
+        termInput.focus();
+        // Если это команда без параметров, выполняем сразу
+        if(cmdText === 'genpass' || cmdText === 'portscan' || cmdText === 'sysinfo' || cmdText === 'clear') {
+            executeCommand(cmdText);
+            termInput.value = '';
+        }
+    }
 
     termInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const rawInput = this.value.trim();
             if (rawInput) {
-                print(`root@lab_station:# ${rawInput}`, 'accent');
-                parseCommand(rawInput);
+                executeCommand(rawInput);
             }
             this.value = '';
-            screen.scrollTop = screen.scrollHeight;
         }
     });
 
-    function print(text, className = '') {
-        const div = document.createElement('div');
-        div.className = `row ${className}`;
-        div.innerHTML = text;
-        screen.appendChild(div);
+    function createCard(title, content, isError = false) {
+        const card = document.createElement('div');
+        card.className = isError ? 'card error-card' : 'card';
+        
+        const header = document.createElement('div');
+        header.className = 'card-header';
+        header.innerHTML = `<span>${title}</span><span>${new Date().toLocaleTimeString()}</span>`;
+        
+        const body = document.createElement('div');
+        body.className = 'card-body';
+        body.innerHTML = content;
+        
+        card.appendChild(header);
+        card.appendChild(body);
+        screen.appendChild(card);
+        screen.scrollTop = screen.scrollHeight;
     }
 
-    function parseCommand(inputStr) {
+    function executeCommand(inputStr) {
         const parts = inputStr.split(' ');
         const cmd = parts[0].toLowerCase();
         const args = parts.slice(1);
 
         switch(cmd) {
             case 'help':
-                print('Доступные криптографические и системные модули:', 'meta');
-                print('  <span class="accent">genpass [length]</span>  - Generator: Создание устойчивых паролей');
-                print('  <span class="accent">cipher [text]</span>     - Cipher: Кодирование строки в Base64');
-                print('  <span class="accent">decipher [hash]</span>   - Decipher: Декодирование из Base64');
-                print('  <span class="accent">hash [text]</span>       - Cryptography: Хэширование SHA-256');
-                print('  <span class="accent">ip [target_ip]</span>    - OSINT: Гео-разведка по IP через ipwho.is (HTTPS)');
-                print('  <span class="accent">sysinfo</span>           - Сбор слепков метаданных текущего гостя');
-                print('  <span class="accent">clear</span>             - Полная очистка буфера экрана');
+                let helpText = `Доступные директивы платформы:\n`;
+                helpText += `• genpass [длина] - Безопасный генератор байт-паролей\n`;
+                helpText += `• cipher [текст]   - Строковое шифрование в Base64\n`;
+                helpText += `• decipher [хэш]  - Восстановление текста из Base64\n`;
+                helpText += `• hash [текст]     - Асинхронное крипто-хэширование SHA-256\n`;
+                helpText += `• portscan         - Сканирование локальных сокетов машины\n`;
+                helpText += `• sysinfo          - Чтение метаданных гостевой сессии\n`;
+                helpText += `• clear            - Сброс буфера рабочей среды`;
+                createCard('Справка системы', helpText);
                 break;
 
             case 'genpass':
-                let length = parseInt(args[0]) || 12;
+                let length = parseInt(args[0]) || 16;
                 if (length < 4 || length > 64) {
-                    print('Ошибка: Допустимая длина пароля от 4 до 64 символов.', 'error');
+                    createCard('Ошибка параметров', 'Допустимый диапазон длины генератора: от 4 до 64 символов.', true);
                     break;
                 }
                 const password = generateSecurePassword(length);
-                print('ГЕНЕРАЦИЯ ПАРОЛЯ ЗАВЕРШЕНА:', 'meta');
-                print(`<div class="tool-result code">${password}</div>`);
+                createCard('Генератор крипто-паролей', password);
                 break;
 
             case 'cipher':
                 if (args.length === 0) {
-                    print('Ошибка: Укажите текст для кодирования.', 'error');
+                    createCard('Ошибка ввода', 'Передайте текст для конвертации. Пример: cipher мой_текст', true);
                     break;
                 }
                 const textToEncode = args.join(' ');
                 try {
                     const encoded = btoa(encodeURIComponent(textToEncode).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
-                    print('СТРОКА ЗАКОДИРОВАНА В Base64:', 'meta');
-                    print(`<div class="tool-result code">${encoded}</div>`);
+                    createCard('Кодирование Base64', encoded);
                 } catch(e) {
-                    print('Ошибка при обработке строки.', 'error');
+                    createCard('Критическая ошибка', 'Не удалось нормализовать входящие символы.', true);
                 }
                 break;
 
             case 'decipher':
                 if (args.length === 0) {
-                    print('Ошибка: Укажите Base64 хэш.', 'error');
+                    createCard('Ошибка ввода', 'Укажите строку в формате Base64 для расшифровки.', true);
                     break;
                 }
                 const hashToDecode = args[0];
                 try {
                     const decoded = decodeURIComponent(atob(hashToDecode).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                    print('ОБРАБОТКА ХЭША ЗАВЕРШЕНА:', 'meta');
-                    print(`<div class="tool-result code">${decoded}</div>`);
+                    createCard('Декодирование Base64', decoded);
                 } catch(e) {
-                    print('Ошибка: Невалидный хэш Base64.', 'error');
+                    createCard('Ошибка декодера', 'Строка не соответствует спецификации Base64.', true);
                 }
                 break;
 
             case 'hash':
                 if (args.length === 0) {
-                    print('Ошибка: Не передан текст для хэширования.', 'error');
+                    createCard('Ошибка ввода', 'Отсутствует текст для обработки алгоритмом SHA-256.', true);
                     break;
                 }
                 const textToHash = args.join(' ');
-                print('Запуск асинхронного криптографического движка...', 'meta');
                 
                 const encoder = new TextEncoder();
                 const data = encoder.encode(textToHash);
@@ -254,62 +430,58 @@
                     .then(buffer => {
                         const hashArray = Array.from(new Uint8Array(buffer));
                         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                        print('ХЭШ УСПЕШНО СФОРМИРОВАН (SHA-256):', 'meta');
-                        print(`<div class="tool-result code">${hashHex}</div>`);
-                        screen.scrollTop = screen.scrollHeight;
+                        createCard('Криптографический хэш SHA-256', hashHex);
                     })
-                    .catch(() => print('Критическая ошибка крипто-движка.', 'error'));
+                    .catch(() => createCard('Системный сбой', 'Локальный крипто-движок отклонил транзакцию.', true));
                 break;
 
-            case 'ip':
-                const targetIp = args[0] || '';
-                print(`Отправка диагностических пакетов к узлу: ${targetIp || 'LOCAL_HOST'}...`, 'meta');
+            case 'portscan':
+                createCard('Сетевой анализ', 'Запущен опрос локальных сокетов на хосте 127.0.0.1...\nРезультаты будут добавлены логом ниже.');
                 
-                // Ссылка идет СТРОГО на ipwho.is
-                fetch(`https://ipwho.is/${targetIp}`)
-                    .then(res => {
-                        if (!res.ok) throw new Error('API_ERROR');
-                        return res.json();
-                    })
-                    .then(data => {
-                        if(data.success === false) {
-                            print(`Ошибка: Узел отклонил запрос. Причина: ${data.message || 'invalid IP'}`, 'error');
-                            return;
-                        }
-                        print('ОТВЕТ ОТ МАРШРУТИЗАТОРА ПОЛУЧЕН:', 'meta');
-                        let info = `Target IP:  ${data.ip}\n`;
-                        info += `Type:       ${data.type} (IPv${data.ip_version || '4'})\n`;
-                        info += `Provider:   ${data.connection?.isp || 'Unknown'} (${data.connection?.asn || 'N/A'})\n`;
-                        info += `Location:   ${data.country} / ${data.region} / ${data.city}\n`;
-                        info += `Geoposition: Lat ${data.latitude}, Lon ${data.longitude}`;
-                        print(`<div class="tool-result code" style="white-space: pre-line;">${info}</div>`);
-                        screen.scrollTop = screen.scrollHeight;
-                    })
-                    .catch(() => {
-                        print('Ошибка связи: Не удалось получить ответ от инфо-сервера ipwho.is.', 'error');
-                        print('Проверь: Блокировщики скриптов или AdBlock могут резать внешние fetch-запросы.', 'meta');
-                    });
+                const portsToScan = [80, 443, 3000, 8080];
+                portsToScan.forEach(port => {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 1500);
+                    
+                    fetch(`https://127.0.0.1:${port}`, { mode: 'no-cors', signal: controller.signal })
+                        .then(() => {
+                            clearTimeout(timeoutId);
+                            const log = document.createElement('div');
+                            log.className = 'sys-log';
+                            log.innerHTML = `[+] Локальный порт ${port}: <b style="color: #10b981">ОТКРЫТ (Службы активны)</b>`;
+                            screen.appendChild(log);
+                        })
+                        .catch((err) => {
+                            clearTimeout(timeoutId);
+                            const log = document.createElement('div');
+                            log.className = 'sys-log';
+                            if (err.name !== 'AbortError') {
+                                log.innerHTML = `[+] Локальный порт ${port}: <b style="color: #10b981">АКТИВЕН (Сервер отвечает)</b>`;
+                            } else {
+                                log.innerHTML = `[-] Локальный порт ${port}: <span style="color: #9ca3af">ЗАКРЫТ (Таймаут)</span>`;
+                            }
+                            screen.appendChild(log);
+                            screen.scrollTop = screen.scrollHeight;
+                        });
+                });
                 break;
 
             case 'sysinfo':
-                print('Сбор слепков текущего окружения...', 'meta');
-                let sysData = `Платформа:      ${navigator.platform}\n`;
-                sysData += `Язык системы:    ${navigator.language}\n`;
-                sysData += `Разрешение дисплея: ${window.screen.width}x${window.screen.height}\n`;
-                sysData += `Ядра процессора:  ${navigator.hardwareConcurrency || 'Защищено'} логических ядер\n`;
-                sysData += `Файлы Сookie:    ${navigator.cookieEnabled ? 'Активны' : 'Заблокированы'}`;
-                
-                print('СНЯТ МЕТА-СЛЕПОК СИСТЕМЫ:', 'meta');
-                print(`<div class="tool-result code" style="white-space: pre-line;">${sysData}</div>`);
+                let sysData = `Платформа среды:   ${navigator.platform}\n`;
+                sysData += `Языковой пакет:    ${navigator.language}\n`;
+                sysData += `Разрешение экрана: ${window.screen.width}x${window.screen.height} px\n`;
+                sysData += `Потоки процессора: ${navigator.hardwareConcurrency || 'Защищено'} ядер\n`;
+                sysData += `Куки-файлы:        ${navigator.cookieEnabled ? 'Разрешены' : 'Заблокированы'}`;
+                createCard('Метаданные системы', sysData);
                 break;
 
             case 'clear':
             case 'cls':
-                screen.innerHTML = '';
+                screen.innerHTML = '<div class="sys-log">[SYSTEM LOG]: Рабочая среда очищена.</div>';
                 break;
 
             default:
-                print(`Команда "${cmd}" не поддерживается синтаксисом станции. Введите "help".`, 'error');
+                createCard('Ошибка синтаксиса', `Команда "${cmd}" не распознана. Используйте меню слева или введите "help".`, true);
         }
     }
 
