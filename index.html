@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB_STATION // CONTROL_PANEL</title>
+    <style>
+        :root {
+            --bg-main: #0a0b0d;
+            --panel-bg: #111317;
+            --panel-border: #222630;
+            --text-primary: #e2e8f0;
+            --text-muted: #64748b;
+            --accent-blue: #38bdf8; 
+            --code-green: #34d399;
+            --error-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .console-container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        .top-bar {
+            background: #161920;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--code-green);
+            border-radius: 50%;
+        }
+
+        .station-id {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .output-area {
+            padding: 25px;
+            height: 580px;
+            overflow-y: auto;
+            background: #0d0f13;
+        }
+
+        .output-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .output-area::-webkit-scrollbar-thumb {
+            background: #222630;
+        }
+
+        .row {
+            margin-bottom: 6px;
+            white-space: pre-wrap;
+        }
+
+        .meta { color: var(--text-muted); }
+        .accent { color: var(--accent-blue); }
+        .code { color: var(--code-green); }
+        .error { color: var(--error-red); }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            background: #111317;
+            border-top: 1px solid var(--panel-border);
+        }
+
+        .prompt-symbol {
+            color: var(--accent-blue);
+            margin-right: 12px;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        #terminal-input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            flex-grow: 1;
+            outline: none;
+        }
+
+        .tool-result {
+            margin: 10px 0;
+            padding: 12px;
+            background: #161920;
+            border-left: 3px solid var(--accent-blue);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="console-container">
+    <div class="top-bar">
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>LAB_STATION // ONLINE</span>
+        </div>
+        <div class="station-id">HOST: GITHUB_PAGES // SECURE_MODE</div>
+    </div>
+
+    <div class="output-area" id="screen">
+        <div class="row meta">[SYSTEM]: INITIALIZING KERNEL LOGS...</div>
+        <div class="row meta">[SYSTEM]: ALL LOCAL MODULES LOADED SUCCESSFULLY.</div>
+        <div class="row">Интерфейс автономного управления запущен. Внешние зависимости отключены.</div>
+        <div class="row meta">Введите <span class="accent">help</span> для вывода полного списка доступных утилит.</div>
+    </div>
+
+    <div class="input-row">
+        <span class="prompt-symbol">root@lab_station:#</span>
+        <input type="text" id="terminal-input" autofocus autocomplete="off" spellcheck="false">
+    </div>
+</div>
+
+<script>
+    const screen = document.getElementById('screen');
+    const termInput = document.getElementById('terminal-input');
+
+    document.addEventListener('click', () => termInput.focus());
+
+    termInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const rawInput = this.value.trim();
+            if (rawInput) {
+                print(`root@lab_station:# ${rawInput}`, 'accent');
+                parseCommand(rawInput);
+            }
+            this.value = '';
+            screen.scrollTop = screen.scrollHeight;
+        }
+    });
+
+    function print(text, className = '') {
+        const div = document.createElement('div');
+        div.className = `row ${className}`;
+        div.innerHTML = text;
+        screen.appendChild(div);
+    }
+
+    function parseCommand(inputStr) {
+        const parts = inputStr.split(' ');
+        const cmd = parts[0].toLowerCase();
+        const args = parts.slice(1);
+
+        switch(cmd) {
+            case 'help':
+                print('Доступные криптографические и автономные модули:', 'meta');
+                print('  <span class="accent">genpass [length]</span>  - Generator: Создание устойчивых паролей');
+                print('  <span class="accent">cipher [text]</span>     - Cipher: Кодирование строки в Base64');
+                print('  <span class="accent">decipher [hash]</span>   - Decipher: Декодирование из Base64');
+                print('  <span class="accent">hash [text]</span>       - Cryptography: Хэширование SHA-256');
+                print('  <span class="accent">portscan</span>          - Network: Локальное сканирование портов машины (100% Offline)');
+                print('  <span class="accent">sysinfo</span>           - Сбор слепков метаданных текущего гостя');
+                print('  <span class="accent">clear</span>             - Полная очистка буфера экрана');
+                break;
+
+            case 'genpass':
+                let length = parseInt(args[0]) || 12;
+                if (length < 4 || length > 64) {
+                    print('Ошибка: Допустимая длина пароля от 4 до 64 символов.', 'error');
+                    break;
+                }
+                const password = generateSecurePassword(length);
+                print('ГЕНЕРАЦИЯ ПАРОЛЯ ЗАВЕРШЕНА:', 'meta');
+                print(`<div class="tool-result code">${password}</div>`);
+                break;
+
+            case 'cipher':
+                if (args.length === 0) {
+                    print('Ошибка: Укажите текст для кодирования.', 'error');
+                    break;
+                }
+                const textToEncode = args.join(' ');
+                try {
+                    const encoded = btoa(encodeURIComponent(textToEncode).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+                    print('СТРОКА ЗАКОДИРОВАНА В Base64:', 'meta');
+                    print(`<div class="tool-result code">${encoded}</div>`);
+                } catch(e) {
+                    print('Ошибка при обработке строки.', 'error');
+                }
+                break;
+
+            case 'decipher':
+                if (args.length === 0) {
+                    print('Ошибка: Укажите Base64 хэш.', 'error');
+                    break;
+                }
+                const hashToDecode = args[0];
+                try {
+                    const decoded = decodeURIComponent(atob(hashToDecode).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                    print('ОБРАБОТКА ХЭША ЗАВЕРШЕНА:', 'meta');
+                    print(`<div class="tool-result code">${decoded}</div>`);
+                } catch(e) {
+                    print('Ошибка: Невалидный хэш Base64.', 'error');
+                }
+                break;
+
+            case 'hash':
+                if (args.length === 0) {
+                    print('Ошибка: Не передан текст для хэширования.', 'error');
+                    break;
+                }
+                const textToHash = args.join(' ');
+                print('Запуск асинхронного криптографического движка...', 'meta');
+                
+                const encoder = new TextEncoder();
+                const data = encoder.encode(textToHash);
+                
+                crypto.subtle.digest('SHA-256', data)
+                    .then(buffer => {
+                        const hashArray = Array.from(new Uint8Array(buffer));
+                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        print('ХЭШ УСПЕШНО СФОРМИРОВАН (SHA-256):', 'meta');
+                        print(`<div class="tool-result code">${hashHex}</div>`);
+                        screen.scrollTop = screen.scrollHeight;
+                    })
+                    .catch(() => print('Критическая ошибка крипто-движка.', 'error'));
+                break;
+
+            case 'portscan':
+                print('Инициализация сканера... Анализ локального хоста 127.0.0.1', 'meta');
+                print('Проверка популярных портов разработки (80, 443, 3000, 8080)...', 'meta');
+                
+                const portsToScan = [80, 443, 3000, 8080];
+                
+                portsToScan.forEach(port => {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 1500); // Таймаут 1.5 секунды
+                    
+                    fetch(`https://127.0.0.1:${port}`, { mode: 'no-cors', signal: controller.signal })
+                        .then(() => {
+                            clearTimeout(timeoutId);
+                            print(`  [+] Порт ${port}: <span class="code">ОТКРЫТ / СЛУШАЕТСЯ</span>`);
+                        })
+                        .catch((err) => {
+                            clearTimeout(timeoutId);
+                            // Браузеры отклоняют no-cors по-разному, но если это не таймаут, значит порт отвечает
+                            if (err.name !== 'AbortError') {
+                                print(`  [+] Порт ${port}: <span class="code">АКТИВЕН (Сервер обнаружен)</span>`);
+                            } else {
+                                print(`  [-] Порт ${port}: <span class="meta">ЗАКРЫТ (Превышено время ожидания)</span>`);
+                            }
+                            screen.scrollTop = screen.scrollHeight;
+                        });
+                });
+                break;
+
+            case 'sysinfo':
+                print('Сбор слепков текущего окружения...', 'meta');
+                let sysData = `Платформа:      ${navigator.platform}\n`;
+                sysData += `Язык системы:    ${navigator.language}\n`;
+                sysData += `Разрешение дисплея: ${window.screen.width}x${window.screen.height}\n`;
+                sysData += `Ядра процессора:  ${navigator.hardwareConcurrency || 'Защищено'} логических ядер\n`;
+                sysData += `Файлы Сookie:    ${navigator.cookieEnabled ? 'Активны' : 'Заблокированы'}`;
+                
+                print('СНЯТ МЕТА-СЛЕПОК СИСТЕМЫ:', 'meta');
+                print(`<div class="tool-result code" style="white-space: pre-line;">${sysData}</div>`);
+                break;
+
+            case 'clear':
+            case 'cls':
+                screen.innerHTML = '';
+                break;
+
+            default:
+                print(`Команда "${cmd}" не поддерживается синтаксисом станции. Введите "help".`, 'error');
+        }
+    }
+
+    function generateSecurePassword(len) {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+        let res = "";
+        const randomValues = new Uint32Array(len);
+        window.crypto.getRandomValues(randomValues);
+        for (let i = 0; i < len; i++) {
+            res += charset[randomValues[i] % charset.length];
+        }
+        return res;
+    }
+</script>
+</body>
+</html>
