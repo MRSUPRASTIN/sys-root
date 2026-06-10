@@ -3,653 +3,332 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAB_STATION // DARK_NEO_INTERFACE</title>
+    <title>NeoQR - Генератор QR-кодов</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
-            --bg-main: #0b0d11;
-            --panel-bg: rgba(20, 24, 33, 0.85);
-            --panel-border: rgba(255, 255, 255, 0.06);
-            --sidebar-bg: #11151f;
-            --text-primary: #f1f5f9;
-            --text-muted: #64748b;
-            --accent: #6366f1;
-            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
-            --code-bg: #07090e;
-            --code-text: #34d399;
-            --error-red: #f87171;
+            --bg-color: #0a0f1d;
+            --card-bg: #111827;
+            --accent-color: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success: #10b981;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            background-color: var(--bg-main);
-            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-                              radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.12) 0px, transparent 50%);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 14px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        .main-container {
-            width: 100%;
-            max-width: 1200px;
-            height: 750px;
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
+        /* Декоративные фоновые элементы для киберпанк-атмосферы */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            filter: blur(150px);
+            opacity: 0.15;
+            z-index: -1;
+        }
+        body::before { top: 10%; left: 10%; }
+        body::after { bottom: 10%; right: 10%; }
+
+        .container {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 24px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            display: flex;
-            overflow: hidden;
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 
+                        0 0 50px rgba(5b, 130, 246, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
         }
 
-        .sidebar {
-            width: 280px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--panel-border);
-            padding: 30px 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .brand {
-            font-weight: 800;
-            font-size: 16px;
-            letter-spacing: 0.5px;
-            background: var(--accent-gradient);
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-color) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            letter-spacing: -0.5px;
         }
 
-        .brand::before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #06b6d4;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #06b6d4;
-        }
-
-        .menu-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
+        p.subtitle {
             color: var(--text-muted);
-            letter-spacing: 1px;
-            margin-bottom: 12px;
+            text-align: center;
+            font-size: 0.95rem;
+            margin-bottom: 32px;
         }
 
-        .module-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .module-btn {
-            width: 100%;
-            padding: 12px 16px;
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 12px;
-            color: #94a3b8;
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 500;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .module-btn:hover {
-            background: rgba(255, 255, 255, 0.03);
-            border-color: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
-        }
-
-        .module-btn .cmd-tag {
-            font-family: monospace;
-            font-size: 11px;
-            color: #6366f1;
-            background: rgba(99, 102, 241, 0.15);
-            padding: 2px 6px;
-            border-radius: 6px;
-        }
-
-        .sidebar-footer {
-            font-size: 12px;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            transition: background 0.2s ease;
-        }
-
-        .sidebar-footer:hover {
-            background: rgba(255, 255, 255, 0.02);
-            color: var(--text-primary);
-        }
-
-        .status-pulse {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
-            animation: pulse 2s infinite;
-        }
-
-        .workspace {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            background: rgba(15, 19, 26, 0.7);
-        }
-
-        .output-screen {
-            flex-grow: 1;
-            padding: 40px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .output-screen::-webkit-scrollbar {
-            width: 6px;
-        }
-        .output-screen::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        .card {
-            padding: 20px;
-            border-radius: 16px;
-            background: var(--code-bg);
-            border: 1px solid var(--panel-border);
-            animation: slideIn 0.3s ease-out;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-
-        .card-header {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .card-body {
-            color: var(--code-text);
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 14px;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        .sys-log {
-            color: var(--text-muted);
-            font-size: 13px;
-            border-left: 2px solid rgba(255, 255, 255, 0.1);
-            padding-left: 12px;
-        }
-
-        .error-card {
-            background: rgba(239, 68, 68, 0.07);
-            border-color: rgba(239, 68, 68, 0.3);
-            color: var(--error-red);
-        }
-        .error-card .card-body {
-            color: var(--error-red);
-        }
-
-        .input-bar {
-            padding: 24px 40px;
-            background: rgba(11, 13, 17, 0.8);
-            border-top: 1px solid var(--panel-border);
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .input-wrapper {
+        .input-group {
+            margin-bottom: 24px;
             position: relative;
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
         }
 
-        .input-icon {
-            position: absolute;
-            left: 16px;
-            color: var(--accent);
-            font-weight: bold;
-            font-family: monospace;
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
         }
 
-        #terminal-input {
+        input[type="text"] {
             width: 100%;
-            padding: 14px 16px 14px 40px;
-            border-radius: 14px;
-            border: 1px solid var(--panel-border);
-            background: rgba(255, 255, 255, 0.02);
-            color: var(--text-primary);
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 14px;
+            padding: 16px 20px;
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
             outline: none;
             transition: all 0.2s ease;
         }
 
-        #terminal-input:focus {
-            background: rgba(0, 0, 0, 0.3);
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        input[type="text"]:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 7, 10, 0.85);
-            backdrop-filter: blur(12px);
+        /* Настройки кастомизации цвета */
+        .config-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .color-picker-wrapper {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px 16px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            z-index: 9999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            justify-content: space-between;
         }
 
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
+        .color-picker-wrapper span {
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
-        .modal-window {
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+
+        button {
             width: 100%;
-            max-width: 550px;
-            background: #11151f;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 0 40px rgba(99, 102, 241, 0.15);
-            transform: scale(0.9);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            position: relative;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--accent-glow);
+        }
+
+        button:active { transform: translateY(0); }
+
+        /* Секция результата */
+        .result-panel {
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            height: 0;
             overflow: hidden;
         }
 
-        .modal-overlay.active .modal-window {
+        .result-panel.active {
+            opacity: 1;
             transform: scale(1);
+            pointer-events: auto;
+            height: auto;
+            overflow: visible;
         }
 
-        .modal-window::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #6366f1, #06b6d4);
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-        }
-
-        .modal-text {
-            color: #94a3b8;
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 25px;
-        }
-
-        .modal-text p {
-            margin-bottom: 12px;
-        }
-
-        .audio-wave {
-            display: flex;
-            align-items: center;
-            gap: 4px;
+        .qrcode-wrapper {
+            background-color: #fff;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             margin-bottom: 20px;
-            height: 20px;
+            display: inline-block;
         }
 
-        .wave-bar {
-            width: 3px;
-            height: 100%;
-            background: #06b6d4;
-            border-radius: 2px;
-            animation: wave-pulse 1s ease-in-out infinite alternate;
-            animation-play-state: paused;
+        /* Стилизация самого генерируемого изображения */
+        .qrcode-wrapper img {
+            display: block;
         }
 
-        .modal-overlay.speaking .wave-bar {
-            animation-play-state: running;
+        .download-btn {
+            background: transparent;
+            border: 2px solid var(--success);
+            color: var(--success);
+            box-shadow: none;
         }
 
-        .wave-bar:nth-child(2) { animation-delay: 0.2s; }
-        .wave-bar:nth-child(3) { animation-delay: 0.4s; }
-        .wave-bar:nth-child(4) { animation-delay: 0.1s; }
-        .wave-bar:nth-child(5) { animation-delay: 0.3s; }
-
-        @keyframes wave-pulse {
-            0% { height: 20%; }
-            100% { height: 100%; }
+        .download-btn:hover {
+            background-color: var(--success);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
         }
 
-        .modal-btn {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(255, 255, 255, 0.02);
-            color: #475569;
-            font-weight: 600;
-            cursor: not-allowed;
-            transition: all 0.3s ease;
-        }
-
-        .modal-btn.ready {
-            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
-            color: #ffffff;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-        }
-
-        .modal-btn.ready:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.1);
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        footer {
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
         }
     </style>
 </head>
 <body>
 
-<div class="main-container">
-    <aside class="sidebar">
-        <div>
-            <div class="brand">LAB_STATION v2.0</div>
-            
-            <div class="menu-title">Инструменты</div>
-            <ul class="module-list">
-                <li><button class="module-btn" onclick="quickCmd('genpass')">Пароли <span class="cmd-tag">genpass</span></button></li>
-                <li><button class="module-btn" onclick="quickCmd('cipher ')">Кодировать <span class="cmd-tag">cipher</span></button></li>
-                <li><button class="module-btn" onclick="quickCmd('decipher ')">Декодировать <span class="cmd-tag">decipher</span></button></li>
-                <li><button class="module-btn" onclick="quickCmd('hash ')">SHA-256 хэш <span class="cmd-tag">hash</span></button></li>
-                <li><button class="module-btn" onclick="quickCmd('portscan')">Сканер портов <span class="cmd-tag">portscan</span></button></li>
-                <li><button class="module-btn" onclick="quickCmd('sysinfo')">Слепок системы <span class="cmd-tag">sysinfo</span></button></li>
-                <li><button class="module-btn" onclick="quickCmd('clear')">Очистить экран <span class="cmd-tag">clear</span></button></li>
-            </ul>
+    <div class="container">
+        <h1>NeoQR</h1>
+        <p class="subtitle">Мгновенное создание стильных QR-кодов локально</p>
+
+        <div class="input-group">
+            <label for="url-input">Ваша ссылка или текст</label>
+            <input type="text" id="url-input" placeholder="https://example.com" autocomplete="off">
         </div>
 
-        <div class="sidebar-footer" id="devTriggerBtn" title="Послушать обращение разработчика">
-            <div class="status-pulse"></div>
-            <span>Разработчик на связи</span>
-        </div>
-    </aside>
-
-    <main class="workspace">
-        <div class="output-screen" id="screen">
-            <div class="sys-log">[SYSTEM LOG]: Тёмный нео-модуль запущен успешно.</div>
-            <div class="sys-log">[SYSTEM LOG]: Станция активна. Нажмите «Разработчик на связи» внизу слева для прослушивания приветствия.</div>
-        </div>
-
-        <div class="input-bar">
-            <div class="input-wrapper">
-                <span class="input-icon">></span>
-                <input type="text" id="terminal-input" placeholder="Введите команду или выберите модуль слева..." autofocus autocomplete="off" spellcheck="false">
+        <div class="config-row">
+            <div class="color-picker-wrapper">
+                <span>Цвет QR</span>
+                <input type="color" id="qr-color" value="#0a0f1d">
+            </div>
+            <div class="color-header" style="display:none;"></div> <div class="color-picker-wrapper">
+                <span>Фон</span>
+                <input type="color" id="bg-color-picker" value="#ffffff">
             </div>
         </div>
-    </main>
-</div>
 
-<div class="modal-overlay" id="devModal">
-    <div class="modal-window">
-        <div class="modal-title">Привет от разработчика ⚡</div>
-        
-        <div class="audio-wave">
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <span style="font-size: 11px; color: #06b6d4; font-family: monospace; margin-left: 8px;">AUDIO_STREAM_ACTIVE</span>
+        <button id="generate-btn">Сгенерировать код</button>
+
+        <div class="result-panel" id="result-panel">
+            <div class="qrcode-wrapper">
+                <div id="qrcode"></div>
+            </div>
+            <button class="download-btn" id="download-btn">Скачать PNG</button>
         </div>
-
-        <div class="modal-text">
-            <p><strong>На связи создатель этой станции.</strong> LAB_STATION — мой личный побочный проект, который я развиваю и поддерживаю исключительно в свободное время.</p>
-            <p>Это полностью бесплатный инструмент с открытым исходным кодом. Он работает на 100% автономно прямо на вашем компьютере — без скрытых подписок, учетных записей и облачных серверов.</p>
-            <p>Если этот софт сэкономил вам время, помог в работе или просто поднял настроение — чашка кофе очень поможет мне продолжать выпускать обновления, оптимизировать крипто-движки и добавлять новые модули. Каждая мелочь важна!</p>
-        </div>
-
-        <button class="modal-btn" id="modalCloseBtn" disabled>Входящая трансляция текста...</button>
     </div>
-</div>
 
-<script>
-    const screen = document.getElementById('screen');
-    const termInput = document.getElementById('terminal-input');
-    const modalOverlay = document.getElementById('devModal');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
-    const devTriggerBtn = document.getElementById('devTriggerBtn');
-    let speechUtterance = null;
-    let fallbackTimeout = null;
+    <footer>Сгенерировано без использования внешних API</footer>
 
-    const speechText = "Привет от разработчика. На связи создатель этой станции. Лаб стейшн — мой личный побочный проект, который я развиваю и поддерживаю исключительно в свободное время. Это полностью бесплатный инструмент с открытым исходным кодом. Он работает на сто процентов автономно прямо на вашем компьютере — без скрытых подписок, учетных записей и облачных серверов. Если этот софт сэкономил вам время, помог в работе или просто поднял настроение — чашка кофе очень поможет мне продолжать выпускать обновления, оптимизировать крипто-движки и добавлять новые модули. Каждая мелочь важна!";
-
-    document.querySelector('.workspace').addEventListener('click', () => termInput.focus());
-    devTriggerBtn.addEventListener('click', openDevModal);
-
-    // Авто-вызов при первом клике (защита от ограничений браузеров на звук)
-    document.addEventListener('click', function autoFirstTrigger() {
-        if (!modalOverlay.classList.contains('active')) {
-            openDevModal();
-        }
-        document.removeEventListener('click', autoFirstTrigger);
-    }, { capture: true, once: true });
-
-    function unlockModalReady(statusText = "Принять и закрыть") {
-        clearTimeout(fallbackTimeout);
-        modalOverlay.classList.remove('speaking');
-        modalCloseBtn.classList.add('ready');
-        modalCloseBtn.disabled = false;
-        modalCloseBtn.innerText = statusText;
-    }
-
-    function openDevModal() {
-        if (modalOverlay.classList.contains('active')) return;
-
-        modalOverlay.classList.add('active');
-        modalOverlay.classList.add('speaking');
+    <script>
+        const urlInput = document.getElementById('url-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const resultPanel = document.getElementById('result-panel');
+        const qrContainer = document.getElementById('qrcode');
+        const downloadBtn = document.getElementById('download-btn');
         
-        modalCloseBtn.classList.remove('ready');
-        modalCloseBtn.disabled = true;
-        modalCloseBtn.innerText = "Дождитесь окончания трансляции...";
+        const qrColorPicker = document.getElementById('qr-color');
+        const bgColorPicker = document.getElementById('bg-color-picker');
 
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); 
-            speechUtterance = new SpeechSynthesisUtterance(speechText);
-            speechUtterance.lang = 'ru-RU';
-            speechUtterance.rate = 1.0; 
+        let qrCodeInstance = null;
 
-            speechUtterance.onend = function() {
-                unlockModalReady();
-            };
-
-            speechUtterance.onerror = function() {
-                runTextFallback("Закрыть (Аудио заблокировано системой)");
-            };
-
-            window.speechSynthesis.speak(speechUtterance);
-
-            // Резервный таймер на случай зависания аудио-движка в ОС
-            fallbackTimeout = setTimeout(() => {
-                if (modalCloseBtn.disabled && !window.speechSynthesis.speaking) {
-                    runTextFallback("Закрыть (Таймаут звука)");
-                }
-            }, 2000);
-
-        } else {
-            runTextFallback();
-        }
-    }
-
-    function runTextFallback(btnLabel = "Ознакомлен и закрыть") {
-        window.speechSynthesis.cancel();
-        let timeLeft = 12; 
-        modalCloseBtn.innerText = `Чтение сообщения... (${timeLeft}с)`;
-
-        const countdown = setInterval(() => {
-            timeLeft--;
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                unlockModalReady(btnLabel);
-            } else {
-                modalCloseBtn.innerText = `Чтение сообщения... (${timeLeft}с)`;
+        generateBtn.addEventListener('click', () => {
+            let text = urlInput.value.trim();
+            
+            if (!text) {
+                alert('Пожалуйста, введите текст или ссылку!');
+                urlInput.focus();
+                return;
             }
-        }, 1000);
-    }
 
-    modalCloseBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (!modalCloseBtn.disabled) {
-            modalOverlay.classList.remove('active');
-            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-        }
-    });
+            // Очищаем старый QR-код если он был
+            qrContainer.innerHTML = '';
 
-    function quickCmd(cmdText) {
-        termInput.value = cmdText;
-        termInput.focus();
-        if(['genpass', 'portscan', 'sysinfo', 'clear'].includes(cmdText.trim())) {
-            executeCommand(cmdText);
-            termInput.value = '';
-        }
-    }
+            // Создаем новый объект QR-кода прямо в памяти браузера
+            qrCodeInstance = new QRCode(qrContainer, {
+                text: text,
+                width: 200,
+                height: 200,
+                colorDark: qrColorPicker.value,
+                colorLight: bgColorPicker.value,
+                correctLevel: QRCode.CorrectLevel.H
+            });
 
-    termInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            const rawInput = this.value.trim();
-            if (rawInput) executeCommand(rawInput);
-            this.value = '';
-        }
-    });
+            // Небольшая задержка, чтобы библиотека успела отрендерить <img> из тега <canvas>
+            setTimeout(() => {
+                const qrImg = qrContainer.querySelector('img');
+                if (qrImg && qrImg.src) {
+                    resultPanel.classList.add('active');
+                    // Скроллим к результату для удобства на мобильных
+                    resultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
+        });
 
-    function createCard(title, content, isError = false) {
-        const card = document.createElement('div');
-        card.className = isError ? 'card error-card' : 'card';
-        const header = document.createElement('div');
-        header.className = 'card-header';
-        header.innerHTML = `<span>${title}</span><span>${new Date().toLocaleTimeString()}</span>`;
-        const body = document.createElement('div');
-        body.className = 'card-body';
-        body.innerHTML = content;
-        card.appendChild(header); card.appendChild(body);
-        screen.appendChild(card); screen.scrollTop = screen.scrollHeight;
-    }
+        // Функция скачивания готового изображения
+        downloadBtn.addEventListener('click', () => {
+            const qrImg = qrContainer.querySelector('img');
+            if (!qrImg) return;
 
-    function executeCommand(inputStr) {
-        const parts = inputStr.split(' ');
-        const cmd = parts[0].toLowerCase();
-        const args = parts.slice(1);
+            const link = document.createElement('a');
+            link.href = qrImg.src;
+            link.download = 'qr-code.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
 
-        switch(cmd) {
-            case 'help':
-                createCard('Справка системы', `Доступные директивы платформы:\n• genpass [длина] - Безопасный генератор байт-паролей\n• cipher [текст]   - Строковое шифрование в Base64\n• decipher [хэш]  - Восстановление текста из Base64\n• hash [текст]     - Асинхронное крипто-хэширование SHA-256\n• portscan         - Сканирование локальных сокетов машины\n• sysinfo          - Чтение метаданных гостевой сессии\n• clear            - Сброс буфера рабочей среды`);
-                break;
-            case 'genpass':
-                let length = parseInt(args[0]) || 16;
-                if (length < 4 || length > 64) { createCard('Ошибка параметров', 'Диапазон: от 4 до 64 символов.', true); break; }
-                createCard('Генератор крипто-паролей', generateSecurePassword(length));
-                break;
-            case 'cipher':
-                if (args.length === 0) { createCard('Ошибка ввода', 'Передайте текст.', true); break; }
-                try { createCard('Кодирование Base64', btoa(encodeURIComponent(args.join(' ')).replace(/%([0-9A-F]{2})/g, (m, p) => String.fromCharCode('0x' + p)))); } catch(e) { createCard('Критическая ошибка', 'Ошибка конвертации.', true); }
-                break;
-            case 'decipher':
-                if (args.length === 0) { createCard('Ошибка ввода', 'Укажите строку Base64.', true); break; }
-                try { createCard('Декодирование Base64', decodeURIComponent(atob(args[0]).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))); } catch(e) { createCard('Ошибка декодера', 'Невалидный формат.', true); }
-                break;
-            case 'hash':
-                if (args.length === 0) { createCard('Ошибка ввода', 'Нет текста.', true); break; }
-                const encoder = new TextEncoder();
-                crypto.subtle.digest('SHA-256', encoder.encode(args.join(' ')))
-                    .then(buffer => {
-                        const hashHex = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-                        createCard('Криптографический хэш SHA-256', hashHex);
-                    }).catch(() => createCard('Системный сбой', 'Ошибка крипто-движка.', true));
-                break;
-            case 'portscan':
-                createCard('Сетевой анализ', 'Запущен опрос портов 127.0.0.1...');
-                [80, 443, 3000, 8080].forEach(port => {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 1500);
-                    fetch(`https://127.0.0.1:${port}`, { mode: 'no-cors', signal: controller.signal })
-                        .then(() => { clearTimeout(timeoutId); const log = document.createElement('div'); log.className = 'sys-log'; log.innerHTML = `[+] Порт ${port}: <b style="color: #34d399">ОТКРЫТ</b>`; screen.appendChild(log); })
-                        .catch((err) => { clearTimeout(timeoutId); const log = document.createElement('div'); log.className = 'sys-log'; log.innerHTML = err.name !== 'AbortError' ? `[+] Порт ${port}: <b style="color: #34d399">АКТИВЕН</b>` : `[-] Порт ${port}: <span style="color: #64748b">ЗАКРЫТ</span>`; screen.appendChild(log); screen.scrollTop = screen.scrollHeight; });
-                });
-                break;
-            case 'sysinfo':
-                createCard('Метаданные системы', `Платформа: ${navigator.platform}\nЯзык: ${navigator.language}\nЭкран: ${window.screen.width}x${window.screen.height}\nЯдра CPU: ${navigator.hardwareConcurrency || 'Защищено'}`);
-                break;
-            case 'clear': screen.innerHTML = '<div class="sys-log">[SYSTEM LOG]: Буфер экрана сброшен.</div>'; break;
-            default: createCard('Ошибка синтаксиса', `Команда "${cmd}" не распознана.`, true);
-        }
-    }
-
-    function generateSecurePassword(len) {
-        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=";
-        let res = ""; const randomValues = new Uint32Array(len); window.crypto.getRandomValues(randomValues);
-        for (let i = 0; i < len; i++) res += charset[randomValues[i] % charset.length];
-        return res;
-    }
-</script>
+        // Скрывать панель при изменении текста, чтобы пользователь видел изменения только по кнопке
+        urlInput.addEventListener('input', () => {
+            if(resultPanel.classList.contains('active')) {
+                resultPanel.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
